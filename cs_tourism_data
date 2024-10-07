@@ -1,0 +1,68 @@
+/* Below is my process from querying some of the information that I needed for my Case Study on Tourism in Georgia.
+
+Need data for only 5 counties: Fulton,Cobb,Clayton,Dekalb,Gwinnett. Georgia is listed as a county but is for the whole state. Compare Total Spending as percentage to GA as a state. Max and Min in all columns.
+
+Created 2 new tables to support the query for the data that I needed. Wanted data from highest county and lowest county for total spending overall. I also wanted the percentage total compared to the entire state. Below are the queries that I constructed to get there.*/
+
+/*First: Create a table that only has the Five counties that I want to focus on from the dataset of all counties.*/
+
+create TABLE Total_spending_5 as (
+select county,
+total_spending_m
+from GA_COUNTY_2023
+WHERE county LIKE '%Fulton%'
+OR county LIKE '%Cobb%'
+OR county LIKE '%Clayton%'
+OR county LIKE '%DeKalb%'
+OR county LIKE '%Gwinnett%')
+
+/*Second: Create a table with the aggregate percentages column*/
+
+create or replace table total_spending_p as (
+select 
+county,
+total_spending_m,
+((total_spending_m)/35441.7)*100 as Percentage_of_Total
+from total_spending_5 )
+
+/*Third: Create a table that only has the aggregate columns for min and max of total spending & percentage to state of GA spending*/
+
+create or replace table Agg_Total_Spending as
+(Select 
+min(total_spending_m) as Lowest_County,
+max(total_spending_m) as Highest_County,
+(min(total_spending_m)/35441.7)*100 as lowest_Percentage_of_Total,
+(max(total_spending_m)/35441.7)*100 as Highest_Percentage_of_Total
+From
+TOTAL_SPENDING_P)
+
+/*Fourth: With my newly formed tables, I draft a full join between the two tables where agg_total_spending lowest county table matches the value of the total_spending_p table on the total_spending_m column. I also only want the values that are not Null. To provide a label column to identify the results, I create an alias as 'Lowest County' based on total_spending*/
+
+select county,
+total_spending_m,
+percentage_of_total,
+'Lowest County' as County_Ranking
+from total_spending_p full join agg_total_spending on total_spending_p.total_spending_m=agg_total_spending.lowest_county
+where Lowest_county is not NULL
+
+/*Five: I then use this information to create a union between the lowest_county and highest_county so that the table will reflect both the top and lowest county within my filtered 5 counties. This was the final query that I needed to get the table that I needed for my data viz.*/
+
+select county,
+total_spending_m,
+percentage_of_total,
+'Lowest County' as County_Ranking
+from total_spending_p full join agg_total_spending on total_spending_p.total_spending_m=agg_total_spending.lowest_county
+where Lowest_county is not NULL
+Union
+select county,
+total_spending_m,
+percentage_of_total,
+'Highest County' as County_Ranking
+from total_spending_p full join agg_total_spending on total_spending_p.total_spending_m=agg_total_spending.highest_county
+where highest_county is not NULL
+
+/*I am sure there may be an easier way to navigate this but I am glad that I got to explore and build my knowledge and understanding of SQL!
+
+Thanks for Reading!!!
+
+Tamika :) */
